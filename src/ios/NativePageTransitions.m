@@ -9,10 +9,10 @@
 - (CDVPlugin*) initWithWebView:(UIWebView*)theWebView {
   self = [super initWithWebView:theWebView];
   CGRect screenBound = [[UIScreen mainScreen] bounds];
-  
+
   // Set our transitioning view
   self.transitionView = self.webView;
-  
+
   // Look to see if a WKWebView exists
   Class wkWebViewClass = NSClassFromString(@"WKWebView");
   if (wkWebViewClass) {
@@ -23,7 +23,7 @@
       }
     }
   }
-  
+
   // webview height may differ from screen height because of a statusbar
   _nonWebViewHeight = screenBound.size.width-self.transitionView.frame.size.width + screenBound.size.height-self.transitionView.frame.size.height;
   return self;
@@ -34,7 +34,7 @@
   // Cleanup
   self.transitionView = nil;
   self.wkWebView = nil;
-  
+
   [super dispose];
 }
 
@@ -69,15 +69,15 @@
   NSNumber *fixedPixelsBottomNum = [args objectForKey:@"fixedPixelsBottom"];
   int fixedPixelsTop = [fixedPixelsTopNum intValue];
   int fixedPixelsBottom = [fixedPixelsBottomNum intValue];
-  
+
   self.viewController.view.backgroundColor = [UIColor blackColor];
   self.transitionView.layer.shadowOpacity = 0;
-  
+
   //  CGFloat totalHeight = self.viewController.view.frame.size.height;
   CGFloat width = self.viewController.view.frame.size.width;
   CGFloat height = self.viewController.view.frame.size.height;
   CGRect screenshotRect = [self.viewController.view.window frame];
-  
+
   // correct landscape detection on iOS < 8
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   if (isLandscape && width < height) {
@@ -99,15 +99,15 @@
   } else {
     [self.viewController.view.layer renderInContext:UIGraphicsGetCurrentContext()];
   }
-  
+
   // Read the UIImage object
   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();
-  
+
   _screenShotImageView = [[UIImageView alloc]initWithFrame:screenshotRect];
   [_screenShotImageView setImage:image];
   CGFloat retinaFactor = DISPLAY_SCALE;
-  
+
   // in case of a statusbar above the webview, crop off the top
   if (_nonWebViewHeight > 0 && [direction isEqualToString:@"down"]) {
     CGRect rect = CGRectMake(0.0, _nonWebViewHeight*retinaFactor, image.size.width*retinaFactor, (image.size.height-_nonWebViewHeight)*retinaFactor);
@@ -117,13 +117,13 @@
     [_screenShotImageView setImage:[UIImage imageWithCGImage:tempImage]];
     CGImageRelease(tempImage);
   }
-  
+
   if ([direction isEqualToString:@"left"] || [direction isEqualToString:@"up"]) {
     [self.transitionView.superview insertSubview:_screenShotImageView belowSubview:self.transitionView];
   } else {
     [self.transitionView.superview insertSubview:_screenShotImageView aboveSubview:self.transitionView];
   }
-  
+
   // Make a cropped version of the screenshot with only the top and/or bottom piece. Only for left/right slides atm.
   if ([direction isEqualToString:@"left"] || [direction isEqualToString:@"right"]) {
     if (fixedPixelsTop > 0) {
@@ -145,7 +145,7 @@
       [self.transitionView.superview insertSubview:_screenShotImageViewBottom aboveSubview:([direction isEqualToString:@"left"] ? self.transitionView : self.screenShotImageView)];
     }
   }
-  
+
   if ([self loadHrefIfPassed:href]) {
     // pass in -1 for manual (requires you to call executePendingTransition)
     NSTimeInterval delay = [[args objectForKey:@"iosdelay"] doubleValue];
@@ -172,17 +172,17 @@
     delay = 0;
   }
   delay = delay / 1000;
-  
+
   NSString *direction = [args objectForKey:@"direction"];
   NSNumber *slowdownfactor = [args objectForKey:@"slowdownfactor"];
-  
+
   CGFloat transitionToX = 0;
   CGFloat transitionToY = 0;
   CGFloat webviewFromY = _nonWebViewHeight;
   CGFloat webviewToY = _nonWebViewHeight;
   int screenshotSlowdownFactor = 1;
   int webviewSlowdownFactor = 1;
-  
+
   CGFloat width = self.viewController.view.frame.size.width;
   CGFloat height = self.viewController.view.frame.size.height;
 
@@ -210,7 +210,7 @@
     webviewSlowdownFactor = [slowdownfactor intValue];
     webviewFromY = (-height/webviewSlowdownFactor)+_nonWebViewHeight;
   }
-  
+
   [UIView animateWithDuration:duration
                         delay:delay
                       options:UIViewAnimationOptionCurveEaseInOut
@@ -265,25 +265,25 @@
 - (void) flip:(CDVInvokedUrlCommand*)command {
   _command = command;
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
-  
+
   // overlay the webview with a screenshot to prevent the user from seeing changes in the webview before the flip kicks in
   CGSize viewSize = self.viewController.view.bounds.size;
-  
+
   UIGraphicsBeginImageContextWithOptions(viewSize, YES, 0.0);
   [self.viewController.view.layer renderInContext:UIGraphicsGetCurrentContext()];
-  
+
   // Read the UIImage object
   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();
-  
+
   CGFloat width = self.viewController.view.frame.size.width;
   CGFloat height = self.viewController.view.frame.size.height;
   [_screenShotImageView setFrame:CGRectMake(0, 0, width, height)];
-  
+
   _screenShotImageView = [[UIImageView alloc]initWithFrame:[self.viewController.view.window frame]];
   [_screenShotImageView setImage:image];
   [self.transitionView.superview insertSubview:_screenShotImageView aboveSubview:self.transitionView];
-  
+
   if ([self loadHrefIfPassed:[args objectForKey:@"href"]]) {
     // pass in -1 for manual (requires you to call executePendingTransition)
     NSTimeInterval delay = [[args objectForKey:@"iosdelay"] doubleValue];
@@ -365,14 +365,14 @@
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   NSString *action = [args objectForKey:@"action"];
   NSTimeInterval duration = [[args objectForKey:@"duration"] doubleValue];
-  
+
   // duration is passed in ms, but needs to be in sec here
   duration = duration / 1000;
-  
+
   CGFloat width = self.viewController.view.frame.size.width;
   CGFloat height = self.viewController.view.frame.size.height;
   CGRect screenshotRect = [self.viewController.view.window frame];
-  
+
   // correct landscape detection on iOS < 8
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   if (isLandscape && width < height) {
@@ -381,15 +381,15 @@
     width = height;
     height = temp;
   }
-  
+
   CGSize viewSize = self.viewController.view.bounds.size;
   UIGraphicsBeginImageContextWithOptions(viewSize, YES, 0.0);
   [self.viewController.view.layer renderInContext:UIGraphicsGetCurrentContext()];
-  
+
   // Read the UIImage object
   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();
-  
+
   [_screenShotImageView setFrame:screenshotRect];
   if ([action isEqualToString:@"open"]) {
     _screenShotImageView = [[UIImageView alloc]initWithFrame:screenshotRect];
@@ -443,7 +443,7 @@
 
   CGFloat width = self.viewController.view.frame.size.width;
   CGFloat height = self.viewController.view.frame.size.height;
-  
+
   // correct landscape detection on iOS < 8
   BOOL isLandscape = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation);
   if (isLandscape && width < height) {
@@ -455,7 +455,7 @@
   CGFloat transitionToX = 0;
   CGFloat webviewTransitionFromX = 0;
   int screenshotPx = 44;
-  
+
   if ([action isEqualToString:@"open"]) {
     if ([origin isEqualToString:@"right"]) {
       transitionToX = -width+screenshotPx;
@@ -471,7 +471,7 @@
       webviewTransitionFromX = width-screenshotPx;
     }
   }
-  
+
   if ([action isEqualToString:@"open"]) {
     [UIView animateWithDuration:duration
                           delay:delay
@@ -532,7 +532,7 @@
   _screenShotImageView = [[UIImageView alloc]initWithFrame:[self.viewController.view.window frame]];
   [_screenShotImageView setImage:image];
   [self.transitionView.superview insertSubview:_screenShotImageView aboveSubview:self.transitionView];
-    
+
   if ([self loadHrefIfPassed:[args objectForKey:@"href"]]) {
     // pass in -1 for manual (requires you to call executePendingTransition)
     NSTimeInterval delay = [[args objectForKey:@"iosdelay"] doubleValue];
@@ -663,7 +663,7 @@
       // strip any params when looking for the file on the filesystem
       NSString *bareFileName = href;
       NSString *urlParams = nil;
-      
+
       if (![bareFileName hasSuffix:@".html"]) {
         NSRange range = [href rangeOfString:@".html"];
         bareFileName = [href substringToIndex:range.location+5];
@@ -691,9 +691,9 @@
         NSString *absoluteURLWithParams = [absoluteURLString stringByAppendingString: urlParams];
         url = [NSURL URLWithString:absoluteURLWithParams];
       }
-      
+
       NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
-      
+
       // Utilize WKWebView for request if it exists
       if (self.wkWebView != nil) {
         [self.wkWebView loadRequest: urlRequest];
@@ -712,7 +712,7 @@
       } else {
         url = self.webView.request.URL.absoluteString;
       }
-      
+
       // remove the # if it's still there
       if ([url rangeOfString:@"#"].location != NSNotFound) {
         NSRange range = [url rangeOfString:@"#"];
@@ -722,7 +722,7 @@
       url = [url stringByAppendingString:href];
       // and load it
       NSURLRequest *urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-      
+
       if (self.wkWebView != nil) {
         [self.wkWebView loadRequest: urlRequest];
       } else {
