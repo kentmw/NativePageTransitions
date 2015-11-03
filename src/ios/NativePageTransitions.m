@@ -49,6 +49,9 @@
     [self performFadeTransition];
   } else if (_curlOptions != nil) {
     [self performCurlTransition];
+  } else {
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no pending transition"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:_command.callbackId];
   }
 }
 
